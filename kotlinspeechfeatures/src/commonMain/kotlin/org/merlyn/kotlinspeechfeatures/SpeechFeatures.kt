@@ -1,6 +1,7 @@
 package org.merlyn.kotlinspeechfeatures
 
 import kotlinx.coroutines.runBlocking
+import org.merlyn.kotlinspeechfeatures.fft.Complex
 import org.merlyn.kotlinspeechfeatures.fft.FFT
 import org.merlyn.kotlinspeechfeatures.fft.KotlinFFT
 import org.merlyn.kotlinspeechfeatures.internal.*
@@ -34,7 +35,7 @@ class SpeechFeatures(private val fft: FFT = KotlinFFT()) {
         winStep: Float = 0.01f,
         numCep: Int = 13,
         nFilt: Int = 26,
-        nfft: Int? = 2048,
+        nfft: Int? = 512,
         lowFreq: Int = 0,
         highFreq: Int? = null,
         preemph: Float = 0.97f,
@@ -95,7 +96,7 @@ class SpeechFeatures(private val fft: FFT = KotlinFFT()) {
         winLen: Float=0.025f,
         winStep: Float=0.01f,
         nFilt: Int=26,
-        nfft: Int=512,
+        nfft: Int=2048,
         lowFreq: Int=0,
         highFreq: Int? = null,
         preemph: Float = 0.97f,
@@ -135,9 +136,10 @@ class SpeechFeatures(private val fft: FFT = KotlinFFT()) {
         appendEnergy: Boolean = true,
         //        winFunc: FloatArray? = null
         //        12/30測試
+        //Array<FloatArray>
         winFunc: (Int) -> FloatArray = { size -> FloatArray(size) { 1.0f } }
 
-    ): Int {
+    ): List<Complex> {
         val mfccNfft = nfft ?: calculateNfft(sampleRate,winLen)
         val AA = fbank123123(
             signal,
@@ -176,37 +178,40 @@ class SpeechFeatures(private val fft: FFT = KotlinFFT()) {
         winLen: Float=0.025f,
         winStep: Float=0.01f,
         nFilt: Int=26,
-        nfft: Int=512,
+        nfft: Int=2048,
         lowFreq: Int=0,
         highFreq: Int? = null,
         preemph: Float = 0.97f,
 //        winFunc: FloatArray? = null
 //        12/30測試 FloatArray
+        //Array<FloatArray>
         winFunc: (Int) -> FloatArray = { size -> FloatArray(size) { 1.0f } }
 
 
-    ): Int {
+    ): List<Complex> {
         val highFreq= highFreq ?: sampleRate/2
         val premphSignal = signalProc.preemphasis(signal, preemph)
-        val frameLen: Int = (winLen * sampleRate).toInt()
+        val frameLen: Int = (winLen * sampleRate+0.5).toInt()
         val frameStep: Int = (winStep * sampleRate).toInt()
         val frames = signalProc.framesig123123(
             signal = premphSignal,
             frameLen = frameLen,
             frameStep = frameStep,
-//            winFunc = winFunc
-//            12/30測試
             winFunc = winFunc
         )
 //        val (feat, energy) = runBlocking {
-//            val pspec = signalProc.powspec123123(frames, nfft)
+//            val pspec = signalProc.powspec(frames, nfft)
 //            val energy = calcEnergy(pspec) // stores the total energy in each frame.
 //            val fb = getFilterBanks(nFilt, nfft, sampleRate, lowFreq, highFreq)
 //            val feat = calcFeat(pspec, fb)
 //            return@runBlocking feat.map { it.filterIndexed { index, _ -> index < nFilt }.toFloatArray() }.toTypedArray() to energy
 //        }
-        val pspec = signalProc.powspec(frames, nfft)
-        return premphSignal.size
+        return signalProc.powspec123123(frames, nfft)
+//        return frames.size
+//        return FBankResult(feat, energy)
+    }
+    fun roundHalfUp(number: Double): Int {
+        return number.toInt()
     }
 
     /**

@@ -28,9 +28,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             for (file in files) {
                 val wav = loadWavFile(file)
                 val result = speechFeatures.ssc(MathUtils.normalize(wav), nFilt = 64)
-                Log.d(TAG, "ssc output for ${file.name}:")
+//                Log.d(TAG, "ssc output for ${file.name}:")
                 result.forEach {
-                    Log.d(TAG, it.contentToString())
+//                    Log.d(TAG, it.contentToString())
                 }
             }
         }
@@ -49,8 +49,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return Math.sqrt(standardDeviation / divider)
     }
 
-
-
     fun performMfcc() {
         viewModelScope.launch(Dispatchers.IO) {
             val files = fileFromAsset("audioSample")
@@ -59,14 +57,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             for (file in files) {
                 val wav = loadWavFile(file)
 //                val result = speechFeatures.mfcc123123(MathUtils.normalize(wav))
-                Log.d("TAG555", "fbank_frames:00000000000000000")
-                val result = speechFeatures.mfcc(wav.map { it.toFloat() }.toFloatArray())
+                val featResult = speechFeatures.mfcc123123(wav.map { it.toFloat() }.toFloatArray(),44100)//採樣平率
+                Log.d("TAG555", "new_mfcc: ${featResult}")
+
+                val result = speechFeatures.mfcc(wav.map { it.toFloat() }.toFloatArray(),44100)//採樣頻率
                 val mfccSize = result[0].size
+                Log.d("TAG555", "wav: ${wav.map { it.toFloat() }.toFloatArray().size}")
 
+//                Log.d("TAG555", "fbank_frames_size: ${featResult}")
 
-                val featResult = speechFeatures.mfcc123123(wav.map { it.toFloat() }.toFloatArray())
-                Log.d("TAG555", "fbank_frames_size: ${featResult}")
-//                Log.d("TAG555", "fbank_frames: ${featResult.contentToString()}")
 
 
                 for (row in result) {
@@ -96,7 +95,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
 //                Log.d(TAG, "mfcc output for ${file.name}:")
                 result.forEach {
-                    Log.d(TAG, it.contentToString())
+//                    Log.d(TAG, it.contentToString())
                 }
             }
             Log.d("TAG end", "Features 0-51: $features")
@@ -109,9 +108,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             for (file in files) {
                 val wav = loadWavFile(file)
                 val result = speechFeatures.ssc(MathUtils.normalize(wav), nFilt = 64)
-                Log.d(TAG, "fbank output for ${file.name}:")
+//                Log.d(TAG, "fbank output for ${file.name}:")
                 result.forEach {
-                    Log.d(TAG, it.contentToString())
+//                    Log.d(TAG, it.contentToString())
                 }
             }
         }
@@ -123,9 +122,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             for (file in files) {
                 val wav = loadWavFile(file)
                 val result = speechFeatures.ssc(MathUtils.normalize(wav), nFilt = 64)
-                Log.d(TAG, "logbank output for ${file.name}:")
+//                Log.d(TAG, "logbank output for ${file.name}:")
                 result.forEach {
-                    Log.d(TAG, it.contentToString())
+//                    Log.d(TAG, it.contentToString())
                 }
             }
         }
@@ -135,19 +134,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val wavFile = WavFile.openWavFile(file)
         val numFrames = wavFile.numFrames.toInt()
         val channels = wavFile.numChannels
-        val loopCounter: Int = numFrames * channels / 4096 + 1
-        val intBuffer = IntArray(numFrames)
-        val framesPerBuffer = 4096 / channels
-//        val intBuffer = Array(channels) { IntArray(numFrames) }
-
-        Log.d("tag numFrames",numFrames.toString())
-        for (i in 0 until loopCounter) {
-            wavFile.readFrames(intBuffer, framesPerBuffer)
+        val loopCounter: Int = numFrames * channels / 4096+1
+        val intBuffer = IntArray(numFrames * channels)
+        for (i in 0 until loopCounter){
+            wavFile.readFrames(intBuffer, numFrames)
         }
-        Log.d("Tag666","1")
+        Log.d("Tag123", "intBuffer content: ${intBuffer.contentToString()}")
         return intBuffer
-
-//        return flattenBuffer(intBuffer)
     }
 
 //    private fun flattenBuffer(inputBuffer: Array<IntArray>): IntArray {
